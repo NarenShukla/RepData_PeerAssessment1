@@ -39,7 +39,8 @@ Data is read from a zip file called **repdata-data-activity.zip**.
 It is assumed that the (zip) file is downloaded, from the above URL, into the current working 
 directory, before running the code below.
 
-```{r DataLoad}
+
+```r
 act <- read.csv(unz("repdata-data-activity.zip", "activity.csv"),
                                    header=T, 
                                    sep=",", 
@@ -49,15 +50,24 @@ act <- read.csv(unz("repdata-data-activity.zip", "activity.csv"),
 
 This is how the data appears,
 
-```{r ViewDataLoad}
+
+```r
 str(act)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 ## 1: What is mean total number of steps taken per day?
 
 Include **dplyr** package. Create a new date variable. Summrize **Total Steps** by date
 
-```{r totalStepsByDate}
+
+```r
 library(dplyr)
 act$date2 <- as.Date(act$date,"%Y-%m-%d")
 dailySteps <- act %>% group_by(date2) %>% summarize(totalSteps = sum(steps, na.rm=TRUE))
@@ -65,17 +75,40 @@ dailySteps <- act %>% group_by(date2) %>% summarize(totalSteps = sum(steps, na.r
 
 Now print the histogram of the total number of steps taken each day.
 
-```{r printHistogram}
+
+```r
 hist(dailySteps$totalSteps, col="blue", xlab="Daily Steps", 
                main="Total Daily Steps")
 ```
 
+![plot of chunk printHistogram](figure/printHistogram-1.png) 
+
 And report the **mean** and **median** of the total number of steps taken per day
 
-```{r calculateMeanAndMedian}
+
+```r
 mean(dailySteps$totalSteps)
+```
+
+```
+## [1] 9354.23
+```
+
+```r
 median(dailySteps$totalSteps)
+```
+
+```
+## [1] 10395
+```
+
+```r
 summary(dailySteps$totalSteps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##       0    6778   10400    9354   12810   21190
 ```
 
 
@@ -83,30 +116,55 @@ summary(dailySteps$totalSteps)
 
 Average,number of steps taken, by 5 minute interval, across all days.
 
-```{r averageSteps}
+
+```r
 intervalSteps <- act %>% group_by(interval) %>% summarize(averageSteps = mean(steps, na.rm=TRUE))
 ```
 
 Here's how they appear,
 
-```{r showIntervalSteps}
+
+```r
 str(intervalSteps)
-``` 
+```
+
+```
+## Classes 'tbl_df', 'tbl' and 'data.frame':	288 obs. of  2 variables:
+##  $ interval    : int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ averageSteps: num  1.717 0.3396 0.1321 0.1509 0.0755 ...
+##  - attr(*, "drop")= logi TRUE
+```
 
 Plot the chart of average number of steps taken, averaged across all days by 5 minute interval,
 
-```{r plotChart}
+
+```r
 plot(intervalSteps$interval, intervalSteps$averageSteps, type="l", col="blue", lwd=2, 
                xlab="Interval",
                ylab="Average Steps",
                main="Average Steps Taken By 5 Minute Interval")
 ```
 
+![plot of chunk plotChart](figure/plotChart-1.png) 
+
 Now, to calculate, which 5-minute interval, on average across all the days in the dataset, 
 contains the maximum number of steps, **arrange** the dataset by **averageSteps descending**,
 
-```{r getMaxInterval}
+
+```r
 head(arrange(intervalSteps, desc(averageSteps)))
+```
+
+```
+## Source: local data frame [6 x 2]
+## 
+##   interval averageSteps
+## 1      835     206.1698
+## 2      840     195.9245
+## 3      850     183.3962
+## 4      845     179.5660
+## 5      830     177.3019
+## 6      820     171.1509
 ```
 
 So, the answer is, interval **835** has maximum average steps of **206.1698**.
@@ -118,9 +176,14 @@ The presence of missing days may introduce bias into some calculations or summar
 
 This is how we calculate the total number of missing values in the dataset,
 
-```{r missingValues}
+
+```r
 sum(is.na(act$steps))
-``` 
+```
+
+```
+## [1] 2304
+```
 So there are **2304** NA Observations in the dataset. 
 
 Now we need to devise a strategy for filling in all of the missing values in the dataset.
@@ -136,13 +199,15 @@ The strategy we will follow is,
 
 Start with creating a new dataset,
 
-```{r newDataSet}
+
+```r
 actComplete <- act
 ```
 
 Now, apply the strategy discussed above to the new dataset,
 
-```{r applyStrategy}
+
+```r
 for (i in 1:nrow(actComplete)) {
    if (is.na(actComplete[i,]$steps)) {
          a <- actComplete[i,]$interval
@@ -154,21 +219,26 @@ for (i in 1:nrow(actComplete)) {
 
 Summarize **Total Steps** by date, in the new dataset,
 
-```{r summarizeSteps}
+
+```r
 dailyStepsComplete <- actComplete %>% group_by(date2) %>% 
                          summarize(totalStepsComplete = sum(steps))
 ```
 
 Now make a histogram of the total number of steps taken each day, based on the **Complete** data,
 
-```{r printHistogramCompleteSteps}
+
+```r
 hist(dailyStepsComplete$totalStepsComplete, col="blue", xlab="Daily Complete Steps", 
                main="Total Daily Completed Steps")
 ```
 
+![plot of chunk printHistogramCompleteSteps](figure/printHistogramCompleteSteps-1.png) 
+
 Let's view the two histograms side-by-side,
 
-```{r printHistogramComparison}
+
+```r
 par(mfrow = c(1, 2), oma=c(0,0,2,0))
 hist(dailySteps$totalSteps, col="green", xlab="Daily Steps",main="with NAs")
 hist(dailyStepsComplete$totalStepsComplete, col="blue", xlab="Daily Complete Steps",
@@ -176,15 +246,52 @@ hist(dailyStepsComplete$totalStepsComplete, col="blue", xlab="Daily Complete Ste
 mtext("Total Daily Steps", outer = TRUE, font=2)
 ```
 
+![plot of chunk printHistogramComparison](figure/printHistogramComparison-1.png) 
+
 Now, let's find out the impact of imputing missing data, on the estimates of the total daily number
  of steps,
 
-```{r analyzeTotalSteps}
+
+```r
 sum(dailySteps$totalSteps)
+```
+
+```
+## [1] 570608
+```
+
+```r
 sum(dailyStepsComplete$totalStepsComplete)
+```
+
+```
+## [1] 656704
+```
+
+```r
 sum(dailyStepsComplete$totalStepsComplete) - sum(dailySteps$totalSteps)
+```
+
+```
+## [1] 86096
+```
+
+```r
 summary(dailySteps$totalSteps)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##       0    6778   10400    9354   12810   21190
+```
+
+```r
 summary(dailyStepsComplete$totalStepsComplete)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10760   10770   12810   21190
 ```
 
 As you can see, because of the **imputing** of NA values for Daily Steps, 
@@ -208,14 +315,16 @@ Let's add two new variables to our dataset. **First one**, with Short Weekday.
 **Second one**, with Long Weekday. Later on, we will update the second variable, with 
 “weekday” or “weekend”.
 
-```{r addTwoVariablesToDataset}
+
+```r
 actComplete <- mutate(actComplete, dayOfWeek = weekdays(date2, abbr=TRUE),
                                    day = weekdays(date2))
 ```
 
 Now let's update the **second** variable.
 
-```{r updateSecondVariable}
+
+```r
 for (i in 1:nrow(actComplete)) {
    if (actComplete[i,]$dayOfWeek %in% c("Mon","Tue", "Wed","Thu","Fri")) {
          actComplete[i,]$day <- c("weekday")
@@ -227,21 +336,24 @@ for (i in 1:nrow(actComplete)) {
 
 Let's convert it to **factor** now
 
-```{r convertToFactor}
+
+```r
 actComplete$day <- factor(actComplete$day)
 ```
 
 It's time to **Group By** the dataset with **day** and **interval** now. And to calculate 
 **Average Steps**
 
-```{r summarizeByDayAndInterval}
+
+```r
 intervalStepsDay <- actComplete %>% group_by(day, interval) %>% 
                             summarize(averageStepsDay = mean(steps))
 ```
 
 Finally, let's make a panel plot containing a time series plot.
 
-```{r printPanelPlot}
+
+```r
 library(ggplot2)
 g <- ggplot(intervalStepsDay, aes(interval, averageStepsDay))
 g <- g  +
@@ -257,6 +369,8 @@ g <- g  +
            strip.background = element_rect(fill="orange")) 
 print(g)
 ```
+
+![plot of chunk printPanelPlot](figure/printPanelPlot-1.png) 
 
 This completes our analysis. 
 
